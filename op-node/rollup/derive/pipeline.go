@@ -82,7 +82,7 @@ type DerivationPipeline struct {
 }
 
 // NewDerivationPipeline creates a derivation pipeline, which should be reset before use.
-func NewDerivationPipeline(log log.Logger, cfg *rollup.Config, daCfg *txmgr.DAConfig, l1Fetcher L1Fetcher, engine Engine, metrics Metrics, syncCfg *sync.Config) *DerivationPipeline {
+func NewDerivationPipeline(log log.Logger, cfg *rollup.Config, daCfg *txmgr.DAConfig, depositeClient *txmgr.DepositeClient, l1Fetcher L1Fetcher, engine Engine, metrics Metrics, syncCfg *sync.Config) *DerivationPipeline {
 
 	// Pull stages
 	l1Traversal := NewL1Traversal(log, cfg, l1Fetcher)
@@ -92,7 +92,7 @@ func NewDerivationPipeline(log log.Logger, cfg *rollup.Config, daCfg *txmgr.DACo
 	bank := NewChannelBank(log, cfg, frameQueue, l1Fetcher, metrics)
 	chInReader := NewChannelInReader(log, bank, metrics)
 	batchQueue := NewBatchQueue(log, cfg, chInReader)
-	attrBuilder := NewFetchingAttributesBuilder(cfg, l1Fetcher, engine)
+	attrBuilder := NewFetchingAttributesBuilder(cfg, l1Fetcher, engine, depositeClient)
 	attributesQueue := NewAttributesQueue(log, cfg, attrBuilder, batchQueue)
 
 	// Step stages

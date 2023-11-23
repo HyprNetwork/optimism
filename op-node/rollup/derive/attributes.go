@@ -2,6 +2,7 @@ package derive
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -9,8 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum-optimism/optimism/op-bindings/predeploys"
+
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 )
 
 // L1ReceiptsFetcher fetches L1 header info and receipts for the payload attributes derivation (the info tx and deposits)
@@ -25,16 +28,18 @@ type SystemConfigL2Fetcher interface {
 
 // FetchingAttributesBuilder fetches inputs for the building of L2 payload attributes on the fly.
 type FetchingAttributesBuilder struct {
-	cfg *rollup.Config
-	l1  L1ReceiptsFetcher
-	l2  SystemConfigL2Fetcher
+	cfg            *rollup.Config
+	l1             L1ReceiptsFetcher
+	l2             SystemConfigL2Fetcher
+	depositeClient *txmgr.DepositeClient
 }
 
-func NewFetchingAttributesBuilder(cfg *rollup.Config, l1 L1ReceiptsFetcher, l2 SystemConfigL2Fetcher) *FetchingAttributesBuilder {
+func NewFetchingAttributesBuilder(cfg *rollup.Config, l1 L1ReceiptsFetcher, l2 SystemConfigL2Fetcher, depositeClient *txmgr.DepositeClient) *FetchingAttributesBuilder {
 	return &FetchingAttributesBuilder{
-		cfg: cfg,
-		l1:  l1,
-		l2:  l2,
+		cfg:            cfg,
+		l1:             l1,
+		l2:             l2,
+		depositeClient: depositeClient,
 	}
 }
 
@@ -47,7 +52,6 @@ func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Contex
 	var l1Info eth.BlockInfo
 	var depositTxs []hexutil.Bytes
 	var seqNumber uint64
-
 	sysConfig, err := ba.l2.SystemConfigByL2Hash(ctx, l2Parent.Hash)
 	if err != nil {
 		return nil, NewTemporaryError(fmt.Errorf("failed to retrieve L2 parent block: %w", err))
@@ -106,6 +110,21 @@ func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Contex
 	}
 
 	txs := make([]hexutil.Bytes, 0, 1+len(depositTxs))
+	if ba.depositeClient.IsDepositeExist() {
+		var out []string
+		out, err = ba.depositeClient.GetDepositTx()
+		if err != nil {
+			return nil, NewCriticalError(fmt.Errorf("get deposit tx error: %w", err))
+		}
+		var txBytes []byte
+		for _, tmpTx := range out {
+			txBytes, err = hex.DecodeString(tmpTx)
+			if err != nil {
+				return nil, NewCriticalError(fmt.Errorf("decode deposit tx error: %w", err))
+			}
+			txs = append(txs, txBytes)
+		}
+	}
 	txs = append(txs, l1InfoTx)
 	txs = append(txs, depositTxs...)
 

@@ -63,13 +63,15 @@ func NewConfig(ctx *cli.Context, log log.Logger) (*node.Config, error) {
 	syncConfig := NewSyncConfig(ctx)
 
 	daCfg := txmgr.NewDAConfig(flags.DaRPC.Value)
+	depositeClient := txmgr.NewDepositeClient(flags.DepositTxRPC.Value)
 	cfg := &node.Config{
-		L1:       l1Endpoint,
-		L2:       l2Endpoint,
-		L2Sync:   l2SyncEndpoint,
-		Rollup:   *rollupConfig,
-		DAConfig: *daCfg,
-		Driver:   *driverConfig,
+		L1:             l1Endpoint,
+		L2:             l2Endpoint,
+		L2Sync:         l2SyncEndpoint,
+		Rollup:         *rollupConfig,
+		DAConfig:       *daCfg,
+		DepositeClient: *depositeClient,
+		Driver:         *driverConfig,
 		RPC: node.RPCConfig{
 			ListenAddr:  ctx.String(flags.RPCListenAddr.Name),
 			ListenPort:  ctx.Int(flags.RPCListenPort.Name),

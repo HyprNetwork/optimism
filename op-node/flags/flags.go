@@ -45,6 +45,11 @@ var (
 		Value:   "http://da:26659",
 		EnvVars: prefixEnvVars("DA_RPC"),
 	}
+	DepositTxRPC = &cli.StringFlag{
+		Name:    "desposit-tx-rpc",
+		Usage:   "Deposit Transaction RPC",
+		EnvVars: prefixEnvVars("DEPOSIT_TX_RPC"),
+	}
 	Network = &cli.StringFlag{
 		Name:    "network",
 		Usage:   fmt.Sprintf("Predefined network selection. Available networks: %s", strings.Join(chaincfg.AvailableNetworks(), ", ")),
@@ -262,6 +267,7 @@ var optionalFlags = []cli.Flag{
 	RPCListenPort,
 	RollupConfig,
 	DaRPC,
+	DepositTxRPC,
 	Network,
 	L1TrustRPC,
 	L1RPCProviderKind,
