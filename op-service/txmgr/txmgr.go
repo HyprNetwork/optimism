@@ -2,6 +2,7 @@ package txmgr
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -96,6 +97,7 @@ type SimpleTxManager struct {
 	name    string
 	chainID *big.Int
 
+	daCfg   *DAConfig
 	backend ETHBackend
 	l       log.Logger
 	metr    metrics.TxMetricer
@@ -112,18 +114,21 @@ func NewSimpleTxManager(name string, l log.Logger, m metrics.TxMetricer, cfg CLI
 	if err != nil {
 		return nil, err
 	}
-	return NewSimpleTxManagerFromConfig(name, l, m, conf)
+	return NewSimpleTxManagerFromConfig(name, l, m, conf, cfg.DaRpc)
 }
 
 // NewSimpleTxManager initializes a new SimpleTxManager with the passed Config.
-func NewSimpleTxManagerFromConfig(name string, l log.Logger, m metrics.TxMetricer, conf Config) (*SimpleTxManager, error) {
+func NewSimpleTxManagerFromConfig(name string, l log.Logger, m metrics.TxMetricer, conf Config, daRpc string) (*SimpleTxManager, error) {
 	if err := conf.Check(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
+	daCfg := NewDAConfig(daRpc)
+
 	return &SimpleTxManager{
 		chainID: conf.ChainID,
 		name:    name,
 		cfg:     conf,
+		daCfg:   daCfg,
 		backend: conf.Backend,
 		l:       l.New("service", name),
 		metr:    m,
@@ -185,6 +190,21 @@ func (m *SimpleTxManager) send(ctx context.Context, candidate TxCandidate) (*typ
 		ctx, cancel = context.WithTimeout(ctx, m.cfg.TxSendTimeout)
 		defer cancel()
 	}
+
+	data := candidate.TxData
+	var err error = nil
+	if ctx.Value("proposer") == nil {
+		value := hex.EncodeToString(candidate.TxData)
+		data, err = m.daCfg.SetDA(value)
+		if err != nil {
+			m.l.Warn("set da", "err", err)
+			return nil, err
+		}
+		fmt.Printf("set da return: %v", string(data))
+	}
+	candidate = TxCandidate{TxData: data, To: candidate.To, GasLimit: candidate.GasLimit}
+	fmt.Printf("TxCandidate:%v", candidate)
+
 	tx, err := retry.Do(ctx, 30, retry.Fixed(2*time.Second), func() (*types.Transaction, error) {
 		tx, err := m.craftTx(ctx, candidate)
 		if err != nil {
@@ -195,6 +215,7 @@ func (m *SimpleTxManager) send(ctx context.Context, candidate TxCandidate) (*typ
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the tx: %w", err)
 	}
+	fmt.Printf("sendTx: %v", tx)
 	return m.sendTx(ctx, tx)
 }
 

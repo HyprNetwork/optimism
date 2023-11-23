@@ -31,6 +31,7 @@ const (
 	TxSendTimeoutFlagName             = "txmgr.send-timeout"
 	TxNotInMempoolTimeoutFlagName     = "txmgr.not-in-mempool-timeout"
 	ReceiptQueryIntervalFlagName      = "txmgr.receipt-query-interval"
+	DaRpcFlagName                     = "da-rpc"
 )
 
 var (
@@ -120,6 +121,12 @@ func CLIFlags(envPrefix string) []cli.Flag {
 			Value:   defaultReceiptQueryInterval,
 			EnvVars: prefixEnvVars("TXMGR_RECEIPT_QUERY_INTERVAL"),
 		},
+		&cli.StringFlag{
+			Name:     "da-rpc",
+			Usage:    "HTTP provider URL for DA node",
+			Required: true,
+			EnvVars:  prefixEnvVars("DA_RPC"),
+		},
 	}, client.CLIFlags(envPrefix)...)
 }
 
@@ -138,6 +145,7 @@ type CLIConfig struct {
 	NetworkTimeout            time.Duration
 	TxSendTimeout             time.Duration
 	TxNotInMempoolTimeout     time.Duration
+	DaRpc                     string
 }
 
 func NewCLIConfig(l1RPCURL string) CLIConfig {
@@ -198,6 +206,7 @@ func ReadCLIConfig(ctx *cli.Context) CLIConfig {
 		NetworkTimeout:            ctx.Duration(NetworkTimeoutFlagName),
 		TxSendTimeout:             ctx.Duration(TxSendTimeoutFlagName),
 		TxNotInMempoolTimeout:     ctx.Duration(TxNotInMempoolTimeoutFlagName),
+		DaRpc:                     ctx.String(DaRpcFlagName),
 	}
 }
 
@@ -285,6 +294,9 @@ type Config struct {
 	// are required to give up on a tx at a particular nonce without receiving
 	// confirmation.
 	SafeAbortNonceTooLowCount uint64
+
+	// DaRpc is the HTTP provider URL for the Data Availability node.
+	DaRpc string
 
 	// Signer is used to sign transactions when the gas price is increased.
 	Signer opcrypto.SignerFn

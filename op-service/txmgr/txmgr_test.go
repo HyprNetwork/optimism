@@ -617,7 +617,7 @@ func TestManagerErrsOnZeroCLIConfs(t *testing.T) {
 func TestManagerErrsOnZeroConfs(t *testing.T) {
 	t.Parallel()
 
-	_, err := NewSimpleTxManagerFromConfig("TEST", testlog.Logger(t, log.LvlCrit), &metrics.NoopTxMetrics{}, Config{})
+	_, err := NewSimpleTxManagerFromConfig("TEST", testlog.Logger(t, log.LvlCrit), &metrics.NoopTxMetrics{}, Config{}, "")
 	require.Error(t, err)
 }
 

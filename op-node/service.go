@@ -23,6 +23,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum-optimism/optimism/op-node/rollup/driver"
 	"github.com/ethereum-optimism/optimism/op-node/rollup/sync"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 )
 
 // NewConfig creates a Config from the provided flags or environment variables.
@@ -61,12 +62,14 @@ func NewConfig(ctx *cli.Context, log log.Logger) (*node.Config, error) {
 
 	syncConfig := NewSyncConfig(ctx)
 
+	daCfg := txmgr.NewDAConfig(flags.DaRPC.Value)
 	cfg := &node.Config{
-		L1:     l1Endpoint,
-		L2:     l2Endpoint,
-		L2Sync: l2SyncEndpoint,
-		Rollup: *rollupConfig,
-		Driver: *driverConfig,
+		L1:       l1Endpoint,
+		L2:       l2Endpoint,
+		L2Sync:   l2SyncEndpoint,
+		Rollup:   *rollupConfig,
+		DAConfig: *daCfg,
+		Driver:   *driverConfig,
 		RPC: node.RPCConfig{
 			ListenAddr:  ctx.String(flags.RPCListenAddr.Name),
 			ListenPort:  ctx.Int(flags.RPCListenPort.Name),

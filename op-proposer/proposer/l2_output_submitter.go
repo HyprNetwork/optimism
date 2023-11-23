@@ -396,6 +396,7 @@ func (l *L2OutputSubmitter) loop() {
 				break
 			}
 			cCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+			cCtx = context.WithValue(cCtx, "proposer", true)
 			if err := l.sendTransaction(cCtx, output); err != nil {
 				l.log.Error("Failed to send proposal transaction",
 					"err", err,
