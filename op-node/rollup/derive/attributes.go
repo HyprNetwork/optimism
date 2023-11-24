@@ -112,7 +112,8 @@ func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Contex
 	txs := make([]hexutil.Bytes, 0, 1+len(depositTxs))
 	if ba.depositeClient.IsDepositeExist() {
 		var out []string
-		out, err = ba.depositeClient.GetDepositTx()
+
+		out, err = ba.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", l1Info.NumberU64()))
 		if err != nil {
 			return nil, NewCriticalError(fmt.Errorf("get deposit tx error: %w", err))
 		}

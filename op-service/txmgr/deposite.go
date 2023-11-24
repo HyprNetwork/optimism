@@ -14,8 +14,8 @@ func (t *DepositeClient) IsDepositeExist() bool {
 	return t.client.addr != ""
 }
 
-func (t *DepositeClient) GetDepositTx() ([]string, error) {
-	data, err := t.client.Call("tx_getDepositTx")
+func (t *DepositeClient) GetDepositTx(height string) ([]string, error) {
+	data, err := t.client.Call("tx_getDepositTx", height)
 	if err != nil {
 		return nil, err
 	}
