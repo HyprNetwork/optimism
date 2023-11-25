@@ -2,7 +2,6 @@ package derive
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -119,7 +118,7 @@ func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Contex
 		}
 		var txBytes []byte
 		for _, tmpTx := range out {
-			txBytes, err = hex.DecodeString(tmpTx)
+			txBytes, err = hexutil.Decode(tmpTx)
 			if err != nil {
 				return nil, NewCriticalError(fmt.Errorf("decode deposit tx error: %w", err))
 			}
