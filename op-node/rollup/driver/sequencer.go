@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
@@ -96,22 +95,22 @@ func (d *Sequencer) StartBuildingBlock(ctx context.Context) error {
 	// from the transaction pool.
 	attrs.NoTxPool = uint64(attrs.Timestamp) > l1Origin.Time+d.config.MaxSequencerDrift
 
-	if d.depositeClient.IsDepositeExist() {
-		var out []string
+	// if d.depositeClient.IsDepositeExist() {
+	// 	var out []string
 
-		out, err = d.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", l1Origin.Number))
-		if err != nil {
-			return fmt.Errorf("get deposit tx error: %w", err)
-		}
-		var txBytes []byte
-		for _, tmpTx := range out {
-			txBytes, err = hexutil.Decode(tmpTx)
-			if err != nil {
-				return fmt.Errorf("decode deposit tx error: %w", err)
-			}
-			attrs.Transactions = append(attrs.Transactions, txBytes)
-		}
-	}
+	// 	out, err = d.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", l1Origin.Number))
+	// 	if err != nil {
+	// 		return fmt.Errorf("get deposit tx error: %w", err)
+	// 	}
+	// 	var txBytes []byte
+	// 	for _, tmpTx := range out {
+	// 		txBytes, err = hexutil.Decode(tmpTx)
+	// 		if err != nil {
+	// 			return fmt.Errorf("decode deposit tx error: %w", err)
+	// 		}
+	// 		attrs.Transactions = append(attrs.Transactions, txBytes)
+	// 	}
+	// }
 
 	d.log.Debug("prepared attributes for new block",
 		"num", l2Head.Number+1, "time", uint64(attrs.Timestamp),
