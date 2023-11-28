@@ -109,22 +109,22 @@ func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Contex
 	}
 
 	txs := make([]hexutil.Bytes, 0, 1+len(depositTxs))
-	if ba.depositeClient.IsDepositeExist() {
-		var out []string
+	// if ba.depositeClient.IsDepositeExist() {
+	// 	var out []string
 
-		out, err = ba.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", l1Info.NumberU64()))
-		if err != nil {
-			return nil, NewCriticalError(fmt.Errorf("get deposit tx error: %w", err))
-		}
-		var txBytes []byte
-		for _, tmpTx := range out {
-			txBytes, err = hexutil.Decode(tmpTx)
-			if err != nil {
-				return nil, NewCriticalError(fmt.Errorf("decode deposit tx error: %w", err))
-			}
-			txs = append(txs, txBytes)
-		}
-	}
+	// 	out, err = ba.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", l1Info.NumberU64()))
+	// 	if err != nil {
+	// 		return nil, NewCriticalError(fmt.Errorf("get deposit tx error: %w", err))
+	// 	}
+	// 	var txBytes []byte
+	// 	for _, tmpTx := range out {
+	// 		txBytes, err = hexutil.Decode(tmpTx)
+	// 		if err != nil {
+	// 			return nil, NewCriticalError(fmt.Errorf("decode deposit tx error: %w", err))
+	// 		}
+	// 		txs = append(txs, txBytes)
+	// 	}
+	// }
 	txs = append(txs, l1InfoTx)
 	txs = append(txs, depositTxs...)
 
@@ -135,5 +135,6 @@ func (ba *FetchingAttributesBuilder) PreparePayloadAttributes(ctx context.Contex
 		Transactions:          txs,
 		NoTxPool:              true,
 		GasLimit:              (*eth.Uint64Quantity)(&sysConfig.GasLimit),
+		BlockNumber:           l1Info.NumberU64(),
 	}, nil
 }

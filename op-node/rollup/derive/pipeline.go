@@ -93,7 +93,7 @@ func NewDerivationPipeline(log log.Logger, cfg *rollup.Config, daCfg *txmgr.DACo
 	chInReader := NewChannelInReader(log, bank, metrics)
 	batchQueue := NewBatchQueue(log, cfg, chInReader)
 	attrBuilder := NewFetchingAttributesBuilder(cfg, l1Fetcher, engine, depositeClient)
-	attributesQueue := NewAttributesQueue(log, cfg, attrBuilder, batchQueue)
+	attributesQueue := NewAttributesQueue(log, cfg, attrBuilder, batchQueue, depositeClient)
 
 	// Step stages
 	eng := NewEngineQueue(log, cfg, engine, metrics, attributesQueue, l1Fetcher, syncCfg)

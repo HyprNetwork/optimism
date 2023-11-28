@@ -258,9 +258,11 @@ func (eq *EngineQueue) Step(ctx context.Context) error {
 		// Make pipeline first focus to sync unsafe blocks to engineSyncTarget
 		return EngineP2PSyncing
 	}
+	// here to check is safe or not
 	if eq.safeAttributes != nil {
 		return eq.tryNextSafeAttributes(ctx)
 	}
+
 	outOfData := false
 	newOrigin := eq.prev.Origin()
 	// Check if the L2 unsafe head origin is consistent with the new origin

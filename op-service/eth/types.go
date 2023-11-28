@@ -234,6 +234,8 @@ type PayloadAttributes struct {
 	NoTxPool bool `json:"noTxPool,omitempty"`
 	// GasLimit override
 	GasLimit *Uint64Quantity `json:"gasLimit,omitempty"`
+	//
+	BlockNumber uint64 `json:"blockNumber,omitempty"`
 }
 
 type ExecutePayloadStatus string

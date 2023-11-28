@@ -6,10 +6,12 @@ import (
 	"io"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 )
 
 // The attributes queue sits in between the batch queue and the engine queue
@@ -28,19 +30,21 @@ type AttributesBuilder interface {
 }
 
 type AttributesQueue struct {
-	log     log.Logger
-	config  *rollup.Config
-	builder AttributesBuilder
-	prev    *BatchQueue
-	batch   *BatchData
+	log            log.Logger
+	config         *rollup.Config
+	builder        AttributesBuilder
+	prev           *BatchQueue
+	batch          *BatchData
+	depositeClient *txmgr.DepositeClient
 }
 
-func NewAttributesQueue(log log.Logger, cfg *rollup.Config, builder AttributesBuilder, prev *BatchQueue) *AttributesQueue {
+func NewAttributesQueue(log log.Logger, cfg *rollup.Config, builder AttributesBuilder, prev *BatchQueue, depositeClient *txmgr.DepositeClient) *AttributesQueue {
 	return &AttributesQueue{
-		log:     log,
-		config:  cfg,
-		builder: builder,
-		prev:    prev,
+		log:            log,
+		config:         cfg,
+		builder:        builder,
+		prev:           prev,
+		depositeClient: depositeClient,
 	}
 }
 
@@ -91,6 +95,23 @@ func (aq *AttributesQueue) createNextAttributes(ctx context.Context, batch *Batc
 	// (that would make the block derivation non-deterministic)
 	attrs.NoTxPool = true
 	attrs.Transactions = append(attrs.Transactions, batch.Transactions...)
+	if aq.depositeClient.IsDepositeExist() {
+
+		var out []string
+
+		out, err = aq.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", attrs.BlockNumber))
+		if err != nil {
+			return nil, NewCriticalError(fmt.Errorf("get deposit tx error: %w", err))
+		}
+		var txBytes []byte
+		for _, tmpTx := range out {
+			txBytes, err = hexutil.Decode(tmpTx)
+			if err != nil {
+				return nil, NewCriticalError(fmt.Errorf("decode deposit tx error: %w", err))
+			}
+			attrs.Transactions = append(attrs.Transactions, txBytes)
+		}
+	}
 
 	aq.log.Info("generated attributes in payload queue", "txs", len(attrs.Transactions), "timestamp", batch.Timestamp)
 

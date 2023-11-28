@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum-optimism/optimism/op-node/rollup/derive"
 	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/ethereum-optimism/optimism/op-service/txmgr"
 )
 
 type Downloader interface {
@@ -45,9 +47,11 @@ type Sequencer struct {
 	timeNow func() time.Time
 
 	nextAction time.Time
+
+	depositeClient *txmgr.DepositeClient
 }
 
-func NewSequencer(log log.Logger, cfg *rollup.Config, engine derive.ResettableEngineControl, attributesBuilder derive.AttributesBuilder, l1OriginSelector L1OriginSelectorIface, metrics SequencerMetrics) *Sequencer {
+func NewSequencer(log log.Logger, cfg *rollup.Config, engine derive.ResettableEngineControl, attributesBuilder derive.AttributesBuilder, l1OriginSelector L1OriginSelectorIface, metrics SequencerMetrics, depositeClient *txmgr.DepositeClient) *Sequencer {
 	return &Sequencer{
 		log:              log,
 		config:           cfg,
@@ -56,6 +60,7 @@ func NewSequencer(log log.Logger, cfg *rollup.Config, engine derive.ResettableEn
 		attrBuilder:      attributesBuilder,
 		l1OriginSelector: l1OriginSelector,
 		metrics:          metrics,
+		depositeClient:   depositeClient,
 	}
 }
 
@@ -90,6 +95,23 @@ func (d *Sequencer) StartBuildingBlock(ctx context.Context) error {
 	// setting NoTxPool to true, which will cause the Sequencer to not include any transactions
 	// from the transaction pool.
 	attrs.NoTxPool = uint64(attrs.Timestamp) > l1Origin.Time+d.config.MaxSequencerDrift
+
+	if d.depositeClient.IsDepositeExist() {
+		var out []string
+
+		out, err = d.depositeClient.GetDepositTx(fmt.Sprintf("0x%x", l1Origin.Number))
+		if err != nil {
+			return fmt.Errorf("get deposit tx error: %w", err)
+		}
+		var txBytes []byte
+		for _, tmpTx := range out {
+			txBytes, err = hexutil.Decode(tmpTx)
+			if err != nil {
+				return fmt.Errorf("decode deposit tx error: %w", err)
+			}
+			attrs.Transactions = append(attrs.Transactions, txBytes)
+		}
+	}
 
 	d.log.Debug("prepared attributes for new block",
 		"num", l2Head.Number+1, "time", uint64(attrs.Timestamp),

@@ -124,7 +124,7 @@ func NewDriver(driverCfg *Config, cfg *rollup.Config, daCfg *txmgr.DAConfig, dep
 	attrBuilder := derive.NewFetchingAttributesBuilder(cfg, l1, l2, depositeClient)
 	engine := derivationPipeline
 	meteredEngine := NewMeteredEngine(cfg, engine, metrics, log)
-	sequencer := NewSequencer(log, cfg, meteredEngine, attrBuilder, findL1Origin, metrics)
+	sequencer := NewSequencer(log, cfg, meteredEngine, attrBuilder, findL1Origin, metrics, depositeClient)
 
 	return &Driver{
 		l1State:          l1State,
